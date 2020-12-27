@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+<title>TENNIS SHEDULE</title>
+
+</head>
+<body>
+
+<div id="table">
+</div>
+
+
+<script>
+
+class Config {
+  static PLAYERCOUNT = 11;
+  static DAYSCOUNT = 30;
+}
+
+
+class Utils {
+  static getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+  
+  static compareNumbers(a, b) {
+    return a - b;
+  }
+}
+
+
+class TennisShedule {
+  constructor() {
+    this.groups = [];
+    this.players = [];
+    this.days = [];
+    //createGroups();
+    //createPlayers();
+  }
+}
+
+
+
+let GROUPS = [];
+let PLAYERS = [];
+let DAYS = [];
+
+function createGroups() {
+  GROUPS = [];
+  for(let i = 1; i <= Config.PLAYERCOUNT; i++) {
+    for(let j = i + 1; j <= Config.PLAYERCOUNT; j++) {
+      for(let k = j + 1; k <= Config.PLAYERCOUNT; k++) {
+        for(let l = k + 1; l <= Config.PLAYERCOUNT; l++) {
+          let group = [i,j,k,l];
+          group.sort(Utils.compareNumbers);
+          if(GROUPS.indexOf(group) == -1) {
+            GROUPS.push(group);
+          }
+        }
+      }
+    }
+  }
+}
+
+function createPlayers() {
+  PLAYERS = [];
+  for(let i = 1; i <= Config.PLAYERCOUNT; i++) {
+    let missing = [];
+    for(let j = 1; j <= Config.PLAYERCOUNT; j++) {
+      if(i != j) {
+        missing.push(j);
+      }
+    }
+    let player = {
+      id: i,
+      missing: missing
+    };
+    PLAYERS.push(player);
+  }
+}
+
+function createDays() {
+  let i = DAYS.length;
+  while(i++ <= Config.DAYSCOUNT) {
+    let group = findGroup();
+    DAYS.push(group);
+  }
+  /*for(let i = 1; i <= Config.DAYSCOUNT; i++) {
+    let group = findGroup();
+    DAYS.push(group);
+  }*/
+}
+
+function findGroup() {
+  let groups = GROUPS.slice();
+  let sortedGroups = sortedGroupsByMissingPlayersCount(groups);
+  let indexArray = Object.keys(sortedGroups);
+  let index = indexArray[indexArray.length - 1];
+  let group = sortedGroups[index][Utils.getRandomInt(0, sortedGroups[index].length - 1)];
+  index = GROUPS.indexOf(group);
+  removePlayersFromGroup(groups[index]);
+  GROUPS.splice(index, 1);
+  return group;
+}
+
+function removePlayersFromGroup(group) {
+  let tmpGroup = group.slice();
+  for(player of tmpGroup) {
+    for(let i = PLAYERS[player-1].missing.length; i > 0; i--) {
+      let missing = PLAYERS[player-1].missing[i-1];
+      if(tmpGroup.indexOf(missing) > -1) {
+        let index = PLAYERS[player-1].missing.indexOf(missing);
+        PLAYERS[player-1].missing.splice(index, 1);
+      }
+    }
+  }
+}
+
+function sortedGroupsByMissingPlayersCount(groups) {
+  let sortedGroups = [];
+  for(group of groups) {
+    let missingCount = 0;
+    for(player of group) {
+      missingCount += PLAYERS[player-1].missing.length;
+    }
+    if(typeof sortedGroups[missingCount] == 'undefined') {
+      sortedGroups[missingCount] = [];
+    }
+    sortedGroups[missingCount].push(group);
+  }
+  return sortedGroups;
+}
+
+function reload(day) {
+  createGroups();
+  createPlayers();
+  DAYS.length = day;
+  for(let i = 0; i < day; i++) {
+    removePlayersFromGroup(DAYS[i]);
+  }
+  createDays();
+  printTable();
+}
+
+
+createGroups();
+createPlayers();
+createDays();
+
+printTable();
+
+console.log(PLAYERS);
+
+
+
+
+
+
+function print(what) {
+  document.getElementById('table').innerHTML = "";
+  
+  let string = "";
+  string += "<pre>";
+  if(typeof what === 'object' && what !== null) {
+    string += JSON.stringify(what, null, 4);
+    string += "<br>";
+  }
+  else if(Array.isArray(what)) {
+    for(arr in what) {
+      print(arr);
+    }
+  }
+  else {
+    string += what;
+    string += "<br>";
+  }
+  
+  document.getElementById('table').insertAdjacentHTML('afterend', string);
+}
+
+
+
+function printTable() {
+  document.getElementById('table').innerHTML = "";
+  
+  let string = "";
+  string += "<table border=\"1\">";
+  
+  string += "<tr>";
+  string += "<td></td>";
+  for(let i = 1; i <= PLAYERS.length; i++) {
+    string += "<td>";
+    string += "P" + i;
+    string += "</td>";
+  }
+  string += "<td></td>";
+  string += "</tr>";
+  
+  for(let i = 1; i <= DAYS.length; i++) {
+    string += "<tr>";
+    string += "<td>";
+    string += "DATE" + i;
+    string += "</td>";
+    for(let j = 1; j <= PLAYERS.length; j++) {
+      string += "<td>";
+      if(DAYS[i-1].indexOf(PLAYERS[j-1].id) > -1) {
+        string += "&check;";
+      }
+      string += "</td>";
+    }
+    string += "<td><button onClick=\"reload(" + (i - 1) + ");\">&#8635;</button></td>";
+    
+    string += "</tr>";
+  }
+  
+  string += "</table>";
+  
+  document.getElementById('table').insertAdjacentHTML('beforeend', string);
+}
+
+</script>
+
+</body>
+</html>
